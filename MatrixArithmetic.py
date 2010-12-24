@@ -9,6 +9,9 @@ class MalformedMatrix(Exception):
 class NonSquareMatrixException(Exception):
     pass
 
+class EmptyMatrixException(Exception):
+    pass
+
 def is_numeric(x):
     from types import ComplexType, FloatType, IntType, LongType
     return type(x) in [ComplexType, FloatType, IntType, LongType]
@@ -58,8 +61,8 @@ class Matrix(object):
                 ColCount = len(Row)
             elif ColCount != len(Row):
                 raise MalformedMatrix("Matrix has mixed column sizes")
-        if ColCount is None:
-            raise MalformedMatrix("Matrix must have at least one row and column")
+        if ColCount is None or ColCount == 0:
+            raise EmptyMatrixException("Matrix must have at least one row and one column")
     
     _delegate = [
         "__add__", "__contains__", "__delitem__", "__getslice__", "__eq__", "__ge__",
@@ -136,8 +139,13 @@ class SquareMatrix(Matrix):
     def Validate(self):
         """Validate matrix is square."""
         RowCount = len(self._rows)
+        if RowCount == 0:
+            raise EmptyMatrixException("Matrix must have at least one row and one column")
         for Row in self._rows:
-            if RowCount != len(Row):
+            ColCount = len(Row)
+            if ColCount == 0:
+                raise EmptyMatrixException("Matrix must have at least one row and one column")
+            if RowCount != ColCount:
                 raise NonSquareMatrixException("Matrix has %d rows and at least one row does not have an equal number of columns" % RowCount)
     
     def invert(self):
