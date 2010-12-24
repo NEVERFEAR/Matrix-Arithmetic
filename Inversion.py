@@ -20,5 +20,7 @@ print ToString(M)
 I = Invert(M)
 print ToString(I, "I")
 
+MM = SquareMatrix(M)
 
+print MM.invert()
 

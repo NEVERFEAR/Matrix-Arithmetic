@@ -48,6 +48,7 @@ class Matrix(object):
     def __init__(self, matrix, name = "M"):
         self._rows = Copy(matrix)
         self.name = name
+        self.Validate()
     
     def Validate(self):
         """Validate that to matrix is well formed"""
@@ -80,6 +81,12 @@ class Matrix(object):
         if hasattr(matrix, "name"):
             kwds["name"] = self.name + matrix.name
         return Matrix(Multiply(self._rows, matrix), **kwds)
+    
+    def identity(self):
+        return Matrix(Identity(self._rows))
+    
+    def modulo(self, factor):
+        return Matrix(Modulo(self._rows, factor))
     
     # ============================
     # Custom methods
@@ -116,12 +123,26 @@ class Matrix(object):
                 kwds["name"] = y.name + self.name
             return Matrix(Multiply(y, self._rows), **kwds)
 
+    def __mod__(self, y):
+        return self.modulo(y)
+    
     def __str__(self):
         return ToString(self._rows, self.name)
     
     __repr__ = __str__
 
 
+class SquareMatrix(Matrix):
+    def Validate(self):
+        """Validate matrix is square."""
+        RowCount = len(self._rows)
+        for Row in self._rows:
+            if RowCount != len(Row):
+                raise NonSquareMatrixException("Matrix has %d rows and at least one row does not have an equal number of columns" % RowCount)
+    
+    def invert(self):
+        return Matrix(Invert(self._rows))
+    
 
 def is_matrix_type(x):
     from types import ListType

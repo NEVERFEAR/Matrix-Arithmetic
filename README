@@ -15,6 +15,10 @@ Complex object matrix creation:
 Reduce a matrix modulo a number:
 
     Modulo(M, 2)
+    # or
+    MM.modulo(2)
+    # or
+    MM % 2
 
 Scale a matrix by a factor:
     
@@ -41,5 +45,6 @@ Negate all terms in a matrix:
 Get the identity matrix:
     
     I = Identity(M)
-    
+    # or
+    MM.identity()   
 
