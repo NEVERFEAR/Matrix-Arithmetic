@@ -12,3 +12,9 @@ M = [
 print ToString(M)
 print ToString(Identity(M), Name = "I")
 
+try:
+     print ToString(Identity([[1,2]]), Name = "I")
+     raise Exception("An error was expected")
+except NonSquareMatrixException:
+     print "Non-Square matrix has been properly rejected"
+

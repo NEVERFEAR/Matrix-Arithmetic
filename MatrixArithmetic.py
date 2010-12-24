@@ -6,6 +6,8 @@ class MalformedMatrix(Exception):
         Exception.__init__(self, "Position %d: %s" % (position, msg))
         self.position = position
 
+class NonSquareMatrixException(Exception):
+    pass
 
 def BuildMatrixLists(s):
     """Builds a 2D array suitable for a matrix from a string."""
@@ -96,9 +98,9 @@ def ApplyFunc(Matrix, F, Mutate = False):
             ResultRow = []
         for ColIndex, Col in enumerate(Row):
             if Mutate:
-                Row[ColIndex] = F(Col)
+                Row[ColIndex] = F(Col, ColIndex, RowIndex)
             else:
-                ResultRow.append(F(Col))
+                ResultRow.append(F(Col, ColIndex, RowIndex))
         if not Mutate:
             Result.append(ResultRow)
     return Result
@@ -120,14 +122,21 @@ def Negate(Matrix, Mutate = False):
     return ApplyFunc(Matrix, F, Mutate)
 
 def Identity(Matrix):
+    ValidateSquare(Matrix)
     F = lambda v, x, y: 1 if x == y else 0
     return ApplyFunc(Matrix, F, Mutate = False)
+
+def ValidateSquare(Matrix):
+    RowCount = len(Matrix)
+    for Row in Matrix:
+        if RowCount != len(Row):
+            raise NonSquareMatrixException("Must be square")
 
 def Copy(Matrix):
     F = lambda v, x, y: v
     return ApplyFunc(Matrix, F, Mutate = False)
 
-def ToString(Matrix):
+def ToString(Matrix, Name = "M"):
     t = ""
     Y = math.ceil(float(len(Matrix)) / 2)
     i = 1;
@@ -135,6 +144,7 @@ def ToString(Matrix):
     WholeLongest = 0
     FractionLongest = 0
     NegationSize = 0
+    NameLength = len(Name)
     for Row in Matrix:
         ColCnt = 0
         for Col in Row:
@@ -166,12 +176,13 @@ def ToString(Matrix):
     else:
         FormatPat = "%% %dd" % (WholeLongest + 1)
     
+
     for Row in Matrix:
         s = ""
         if i == Y:
-            s = s + "M = "
+            s = s + "%s = " % Name
         else:
-            s = s + "    "
+            s = s + "%s   " % (" " * NameLength)
         
         s = s + "|"
         for Col in Row:
@@ -180,7 +191,7 @@ def ToString(Matrix):
         t = t + s + "\n"
         
         i = i + 1
-    b = "    +-" + ((RowLength - 1) * " ") + "-+\n"
+    b = (" " * NameLength) + "   +-" + ((RowLength - 1) * " ") + "-+\n"
     return b + t + b
 
 def AugmentIdentity(Matrix):
