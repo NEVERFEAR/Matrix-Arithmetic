@@ -9,6 +9,124 @@ class MalformedMatrix(Exception):
 class NonSquareMatrixException(Exception):
     pass
 
+def is_numeric(x):
+    from types import ComplexType, FloatType, IntType, LongType
+    return type(x) in [ComplexType, FloatType, IntType, LongType]
+
+
+class MatrixRow(object):
+    
+    def __init__(*args, **kwds):
+        self._columns = list(*args, **kwds)
+    
+    _delegate = [
+        "__add__", "__contains__", "__delitem__", "__getslice__", "__eq__", "__ge__",
+        "__getitem__", "__getslice__", "__gt__", "__iadd__", "__iter__", "__le__",
+        "__len__", "__lt__", "__ne__", "__reversed__", "__setitem__", "__getslice__",
+        "__str__", "__repr__", # TODO: Should we print out a row as a list? Let's do this for now..
+        "append", "count", "extend", "index", "insert", "pop", "remove", "reverse", "sort"
+    ]
+    
+    for _f in _delegate:
+        _py = ( "def %s(self, *args, **kwds):\n" +
+                "    return self._columns.%s(*args, **kwds)\n") % (_f, _f)
+        exec _py
+    
+    # ============================
+    # Custom methods
+    # ============================
+    def __imul__(self, y):
+        pass # TODO: Multiply this row. With a column? Scale it? Dunno yet
+    
+    def __mul__(self, y):
+        pass # TODO: Multiply this row with a column? scale it? decide
+    
+    def __rmul__(self, y):
+        pass # TODO: Multiply with reversed operands
+
+class Matrix(object):
+    def __init__(self, matrix, name = "M"):
+        self._rows = Copy(matrix)
+        self.name = name
+    
+    def Validate(self):
+        """Validate that to matrix is well formed"""
+        ColCount = None
+        for Row in self._rows:
+            if ColCount is None:
+                ColCount = len(Row)
+            elif ColCount != len(Row):
+                raise MalformedMatrix("Matrix has mixed column sizes")
+        if ColCount is None:
+            raise MalformedMatrix("Matrix must have at least one row and column")
+    
+    _delegate = [
+        "__add__", "__contains__", "__delitem__", "__getslice__", "__eq__", "__ge__",
+        "__getitem__", "__getslice__", "__gt__", "__iadd__", "__iter__", "__le__",
+        "__len__", "__lt__", "__ne__", "__reversed__", "__setitem__", "__getslice__",
+        "append", "count", "extend", "index", "insert", "pop", "remove", "reverse", "sort"
+    ]
+    
+    for _f in _delegate:
+        _py = ( "def %s(self, *args, **kwds):\n" +
+                "    return self._rows.%s(*args, **kwds)\n") % (_f, _f)
+        exec _py
+    
+    def scale(self, factor):
+        return Matrix(Scale(self._rows, factor, Mutate = False))
+    
+    def multiply(self, matrix):
+        kwds = {}
+        if hasattr(matrix, "name"):
+            kwds["name"] = self.name + matrix.name
+        return Matrix(Multiply(self._rows, matrix), **kwds)
+    
+    # ============================
+    # Custom methods
+    # ============================
+    
+    # NOTE: The multiplication function should work as follows
+    """
+    - If factor is a numeric type then scale
+    - If factor is a list or matrix type then perform a matrix multiplication
+    """
+    
+    def __imul__(self, y):
+        if is_numeric(y):
+            self._rows = Scale(self._rows, y, Mutate = True)
+        elif is_matrix_type(y):
+            self._rows = Multiply(self._rows, y)
+        return self
+    
+    def __mul__(self, y):
+        if is_numeric(y):
+            return self.scale(y)
+        elif is_matrix_type(y):
+            kwds = {}
+            if hasattr(y, "name"):
+                kwds["name"] = self.name + y.name
+            return Matrix(Multiply(self._rows, y), **kwds)
+    
+    def __rmul__(self, y):
+        if is_numeric(y):
+            return self.scale(y)
+        elif is_matrix_type(y):
+            kwds = {}
+            if hasattr(y, "name"):
+                kwds["name"] = y.name + self.name
+            return Matrix(Multiply(y, self._rows), **kwds)
+
+    def __str__(self):
+        return ToString(self._rows, self.name)
+    
+    __repr__ = __str__
+
+
+
+def is_matrix_type(x):
+    from types import ListType
+    return type(x) in [ListType, Matrix]
+
 def BuildMatrixLists(s):
     """Builds a 2D array suitable for a matrix from a string."""
     result = []

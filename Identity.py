@@ -18,3 +18,4 @@ try:
 except NonSquareMatrixException:
      print "Non-Square matrix has been properly rejected"
 
+
