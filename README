@@ -7,6 +7,10 @@ Sample matrix creation:
             [ 1, 3,  9],
             [ 1, 7, 49]
     ]
+    
+Complex object matrix creation:
+    
+    MM = Matrix(M)
 
 Reduce a matrix modulo a number:
 
@@ -16,9 +20,9 @@ Scale a matrix by a factor:
     
     Scale(M, 3)
     # or
-    Matrix(M).scale(3)
+    MM.scale(3)
     # or
-    Matrix(M) * 3
+    MM * 3
     
 Add a factor to every element of a matrix:
     
@@ -30,9 +34,9 @@ Negate all terms in a matrix:
     # or
     Scale(M)
     # or
-    Matrix(M).scale(-1)
+    MM.scale(-1)
     # or
-    Matrix(M) * -1
+    MM * -1
 
 Get the identity matrix:
     
