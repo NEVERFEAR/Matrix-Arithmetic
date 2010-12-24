@@ -211,7 +211,6 @@ def ReduceToRowEchelonForm(Matrix, Mutate = False):
     Lead = 0
     RowCount = len(Matrix)
     for RowIndex in xrange(RowCount):
-        print "Processing row", RowIndex
         ColumnCount = len(Matrix[RowIndex])
         if ColumnCount <= Lead:
             return # TODO: What does this mean?
@@ -229,7 +228,6 @@ def ReduceToRowEchelonForm(Matrix, Mutate = False):
                 if ColumnCount == Lead:
                     return # TODO: What does this mean?
         
-        print "The lead is column", Lead, "and has value", Matrix[RowIndex][Lead]
         # This is the swap operation
         MatrixRowSwap(Matrix, RowIndex, j, True)
         # This is the row multiplication operation
@@ -242,15 +240,12 @@ def ReduceToRowEchelonForm(Matrix, Mutate = False):
             if j != RowIndex:
                 # Multiply RowIndex Row by Factor then subtract from Row{j}
                 MatrixRowAddition(Matrix, j, RowIndex, -Matrix[j][Lead], True)
-        print "After handling row", RowIndex
-        print ToString(Matrix)
         Lead += 1
     return Matrix
 
 def MatrixRowSwap(Matrix, RowIndex, WithIndex, Mutate = False):
     Matrix = Matrix if Mutate else Copy(Matrix)
     if RowIndex != WithIndex:
-        print "Swaping", RowIndex, "with", WithIndex
         Row = Matrix[RowIndex]
         Matrix[RowIndex] = Matrix[WithIndex]
         Matrix[WithIndex] = Row
@@ -259,20 +254,16 @@ def MatrixRowSwap(Matrix, RowIndex, WithIndex, Mutate = False):
 def MatrixRowMultiplication(Matrix, RowIndex, Factor, Mutate = False):
     Matrix = Matrix if Mutate else Copy(Matrix)
     Row = Matrix[RowIndex]
-    print "Multiply", Factor, "by", Row, "->",
     for ColIndex, Col in enumerate(Row):
         Row[ColIndex] = Col * Factor
-    print Row
     return Matrix
 
 def MatrixRowAddition(Matrix, ToIndex, RowIndex, Factor, Mutate = False):
     Matrix = Matrix if Mutate else Copy(Matrix)
     Row = Matrix[RowIndex]
     ToRow = Matrix[ToIndex]
-    print "Adding", Row, "*", Factor, "to", ToRow, "->",
     for ColIndex, Col in enumerate(Row):
         ToRow[ColIndex] += Col * Factor
-    print ToRow
     return Matrix
 
 def GaussJordanElimination(Matrix):
@@ -288,32 +279,6 @@ Invert = GaussJordanElimination
     
 
 if __name__ == "__main__":
-    print "=" * 20
-    # We expect a result of
-    # [
-    #   [0.75, 0.50, 0.25],
-    #   [0.50, 1.00, 0.50],
-    #   [0.25, 0.50, 0.75]
-    # ]
-    M = [
-        [ 2.0,-1.0, 0.0],
-        [-1.0, 2.0,-1.0],
-        [ 0.0,-1.0, 2.0]
-    ]
-    M = [
-        [1, 2, 4],
-        [1, 3, 9],
-        [1, 7, 49]
-    ]
-    print "Before Inversion"
-    print ToString(M)
-    print "Inverted"
-    print ToString(
-        GaussJordanElimination(M)
-    ) 
-
-    print "=" * 20
-    print "Shamirs Shared Secret"
     print "=" * 20
     Prime = 1234567890133
     MatrixA = [
