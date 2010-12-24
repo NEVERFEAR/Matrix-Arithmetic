@@ -288,65 +288,6 @@ Invert = GaussJordanElimination
     
 
 if __name__ == "__main__":
-    """
-    print ToString(
-        Multiply(
-            [
-                [1,1,0,0]
-            ],
-            # That multiplied by
-            [
-                [1,0,0,0,1,1,0],
-                [0,1,0,0,1,0,1],
-                [0,0,1,0,0,1,1],
-                [0,0,0,1,1,1,1]
-            ]
-        )
-    )
-    
-    print "=" * 20
-    print "Multiply"
-    print ToString(
-        Multiply(
-            [
-                [1,2,3],
-                [4,5,6]
-            ],
-            # That multiplied by
-            [
-                [7,1],
-                [2,3],
-                [4,5]
-            ]
-        )
-    )
-    
-    print "=" * 20
-    print "Modulo"
-    print ToString(
-        Modulo(
-            [
-                [7,1],
-                [2,3],
-                [4,5]
-            ],
-            
-            2
-        )
-    )
-    
-    print "=" * 20
-    # Let us check that the mutation works properly
-    M = [
-        [7,1],
-        [2,3],
-        [4,5]
-    ]
-    M_ID = id(M)
-    ScaledM = Scale(M, 2, True)
-    ScaledM_ID = id(ScaledM)
-    assert M_ID == ScaledM_ID
-    """
     print "=" * 20
     # We expect a result of
     # [
