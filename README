@@ -15,6 +15,10 @@ Reduce a matrix modulo a number:
 Scale a matrix by a factor:
     
     Scale(M, 3)
+    # or
+    Matrix(M).scale(3)
+    # or
+    Matrix(M) * 3
     
 Add a factor to every element of a matrix:
     
@@ -23,6 +27,12 @@ Add a factor to every element of a matrix:
 Negate all terms in a matrix:
     
     Negate(M)
+    # or
+    Scale(M)
+    # or
+    Matrix(M).scale(-1)
+    # or
+    Matrix(M) * -1
 
 Get the identity matrix:
     
