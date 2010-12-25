@@ -1,7 +1,7 @@
 import math
 import types
 
-class MalformedMatrix(Exception):
+class MatrixParseException(Exception):
     def __init__(self, msg, position):
         Exception.__init__(self, "Position %d: %s" % (position, msg))
         self.position = position
@@ -10,6 +10,9 @@ class NonSquareMatrixException(Exception):
     pass
 
 class EmptyMatrixException(Exception):
+    pass
+
+class IncompatibleMatrixException(Exception):
     pass
 
 def is_numeric(x):
@@ -60,13 +63,13 @@ class Matrix(object):
             if ColCount is None:
                 ColCount = len(Row)
             elif ColCount != len(Row):
-                raise MalformedMatrix("Matrix has mixed column sizes")
+                raise MatrixParseException("Matrix has mixed column sizes")
         if ColCount is None or ColCount == 0:
             raise EmptyMatrixException("Matrix must have at least one row and one column")
     
     _delegate = [
-        "__add__", "__contains__", "__delitem__", "__getslice__", "__eq__", "__ge__",
-        "__getitem__", "__getslice__", "__gt__", "__iadd__", "__iter__", "__le__",
+        "__contains__", "__delitem__", "__getslice__", "__eq__", "__ge__",
+        "__getitem__", "__getslice__", "__gt__", "__iter__", "__le__",
         "__len__", "__lt__", "__ne__", "__reversed__", "__setitem__", "__getslice__",
         "append", "count", "extend", "index", "insert", "pop", "remove", "reverse", "sort"
     ]
@@ -90,6 +93,12 @@ class Matrix(object):
     
     def modulo(self, factor):
         return Matrix(Modulo(self._rows, factor))
+    
+    def add(self, factor):
+        return Matrix(Add(self._rows, factor))
+    
+    def augment(self, matrix):
+        return Matrix(Augment(self._rows, matrix))
     
     # ============================
     # Custom methods
@@ -126,15 +135,33 @@ class Matrix(object):
                 kwds["name"] = y.name + self.name
             return Matrix(Multiply(y, self._rows), **kwds)
 
-    def __mod__(self, y):
-        return self.modulo(y)
+    def __mod__(self, factor):
+        return self.modulo(factor)
+
+    def __add__(self, matrix):
+        return self.augment(matrix)
+       
+    def __iadd__(self, matrix):
+        Augment(self._rows, matrix, Mutate = True)
+        return self
     
     def __str__(self):
         return ToString(self._rows, self.name)
     
     __repr__ = __str__
 
-
+def Augment(A, B, Mutate = False):
+    """Augment Matrix A with Matrix B."""
+    if len(A) != len(B):
+        raise IncompatibleMatrixException("Operand matrix does not have an equal number of rows")
+    if Mutate:
+        NewRows = A
+    else:
+        NewRows = Copy(A)
+    for RowIndex, Row in enumerate(B):
+        NewRows[RowIndex] += Row
+    return NewRows
+ 
 class SquareMatrix(Matrix):
     def Validate(self):
         """Validate matrix is square."""
@@ -169,7 +196,7 @@ def BuildMatrixLists(s):
         if c == '[':
             depth += 1
             if depth > 2:
-                raise MalformedMatrix("A Matrix cannot have any more than 2 dimensions.", pos)
+                raise MatrixParseException("A Matrix cannot have any more than 2 dimensions.", pos)
             if current is None:
                 current = result
             else:
@@ -179,16 +206,16 @@ def BuildMatrixLists(s):
             invalue = True
         elif c in list("0123456789.-"):
             if not invalue:
-                raise MalformedMatrix("Numerical value unexpected at this time.", pos)
+                raise MatrixParseException("Numerical value unexpected at this time.", pos)
             elif c == '.' and value.find('.') != -1:
-                raise MalformedMatrix("Malformed floating point literal.", pos)
+                raise MatrixParseException("Malformed floating point literal.", pos)
             elif c == '-' and len(value) > 0:
-                raise MalformedMatrix("Negative symbol must appear at the beginning of a numerical value.", pos)
+                raise MatrixParseException("Negative symbol must appear at the beginning of a numerical value.", pos)
             value += c
         elif c == ',' or c == ']':
             if depth > 1: # We've just came from a value
                 if len(value) == 0:
-                    raise MalformedMatrix("Empty value.", pos)
+                    raise MatrixParseException("Empty value.", pos)
                 if value.find('.') != -1:
                     current.append(float(value))
                 else:
@@ -201,19 +228,19 @@ def BuildMatrixLists(s):
                     if len(result) == 1: # If this is the first row
                         width = len(current)
                     elif len(current) != width:
-                        raise MalformedMatrix("Row widths are inconsistent.", pos)
+                        raise MatrixParseException("Row widths are inconsistent.", pos)
                 invalue = False # Since the only time we have these we expect to start another
                 depth -= 1
                 if depth < 0:
-                    raise MalformedMatrix("Invalid Syntax.", pos)
+                    raise MatrixParseException("Invalid Syntax.", pos)
                 
         elif c in [' ', '\t', '\n', '\r']:
             invalue = len(value) == 0 and depth > 1 # We no longer expect to start a new value as the
                                       # next token if we've already started one
         else:
-            raise MalformedMatrix("Unexpected character '%s'." % (c), pos)
+            raise MatrixParseException("Unexpected character '%s'." % (c), pos)
     if depth > 0:
-        raise MalformedMatrix("Matrix improperly ended.", pos)
+        raise MatrixParseException("Matrix improperly ended.", pos)
     return result
     
 def Multiply(A, B):
@@ -346,7 +373,7 @@ def AugmentIdentity(Matrix):
     AugmentedMatrix = []
     for Index, Row in enumerate(Matrix):
         if len(Row) != RowCount:
-            raise MalformedMatrix("Matrix must be square")
+            raise NonSquareMatrixException("Matrix must be square")
         # Augment the matrix with the identity matrix row
         AugmentedRow = Row + map(lambda i : 1 if i == Index else 0, xrange(RowCount))
         AugmentedMatrix.append(AugmentedRow)

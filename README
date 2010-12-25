@@ -31,6 +31,8 @@ Scale a matrix by a factor:
 Add a factor to every element of a matrix:
     
     Add(M, 1)
+    # or
+    MM.add(1)
     
 Negate all terms in a matrix:
     
@@ -47,4 +49,15 @@ Get the identity matrix:
     I = Identity(M)
     # or
     MM.identity()   
+
+Augment a matrix:
+    
+    Augment(M, M)
+    # or
+    A = MM + M
+    # or
+    A = MM + MM
+    # or
+    A = MM.Augment(M)
+
 
