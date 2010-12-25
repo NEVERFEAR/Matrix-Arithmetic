@@ -150,18 +150,7 @@ class Matrix(object):
     
     __repr__ = __str__
 
-def Augment(A, B, Mutate = False):
-    """Augment Matrix A with Matrix B."""
-    if len(A) != len(B):
-        raise IncompatibleMatrixException("Operand matrix does not have an equal number of rows")
-    if Mutate:
-        NewRows = A
-    else:
-        NewRows = Copy(A)
-    for RowIndex, Row in enumerate(B):
-        NewRows[RowIndex] += Row
-    return NewRows
- 
+
 class SquareMatrix(Matrix):
     def Validate(self):
         """Validate matrix is square."""
@@ -242,6 +231,17 @@ def BuildMatrixLists(s):
     if depth > 0:
         raise MatrixParseException("Matrix improperly ended.", pos)
     return result
+def Augment(A, B, Mutate = False):
+    """Augment Matrix A with Matrix B."""
+    if len(A) != len(B):
+        raise IncompatibleMatrixException("Operand matrix does not have an equal number of rows")
+    if Mutate:
+        NewRows = A
+    else:
+        NewRows = Copy(A)
+    for RowIndex, Row in enumerate(B):
+        NewRows[RowIndex] += Row
+    return NewRows
     
 def Multiply(A, B):
     RowCntA = len(A)
