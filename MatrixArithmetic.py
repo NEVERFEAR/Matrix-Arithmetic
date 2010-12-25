@@ -148,7 +148,8 @@ class Matrix(object):
     def __str__(self):
         return ToString(self._rows, self.name)
     
-    __repr__ = __str__
+    def __repr__(self):
+        return repr(self._rows)
 
 
 class SquareMatrix(Matrix):
@@ -172,7 +173,7 @@ def is_matrix_type(x):
     from types import ListType
     return type(x) in [ListType, Matrix]
 
-def BuildMatrixLists(s):
+def ParseMatrix(s):
     """Builds a 2D array suitable for a matrix from a string."""
     result = []
     value = ""
@@ -231,6 +232,7 @@ def BuildMatrixLists(s):
     if depth > 0:
         raise MatrixParseException("Matrix improperly ended.", pos)
     return result
+
 def Augment(A, B, Mutate = False):
     """Augment Matrix A with Matrix B."""
     if len(A) != len(B):
