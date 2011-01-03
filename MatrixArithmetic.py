@@ -1,18 +1,41 @@
+'''Matrix Arithmetic utility module.
+
+Author: doug@neverfear.org
+
+This module provides matrix utility functions and objects to support matrix arithmetic.
+This module has not been performance tuned for any specific use-case. In many ways
+please think of this module as a simple set of utility routines not a serious attempt
+at a matrix processing software development library.
+
+'''
+
 import math
 import types
 
+class MalformedMatrixException(Exception):
+    '''A Matrix instance is not in a structurally sound form.'''
+    pass
+
 class MatrixParseException(Exception):
+    '''A string representation of a matrix is malformed.'''
     def __init__(self, msg, position):
         Exception.__init__(self, "Position %d: %s" % (position, msg))
         self.position = position
 
-class NonSquareMatrixException(Exception):
+class NonSquareMatrixException(MalformedMatrixException):
+    '''A Matrix does not have an equal number of rows and columns.'''
     pass
 
-class EmptyMatrixException(Exception):
+class EmptyMatrixException(MalformedMatrixException):
+    '''A Matrix has no rows or columns.'''
+    pass
+
+class IrregularRowException(MalformedMatrixException):
+    '''There is a difference in the number of columns in each row.'''
     pass
 
 class IncompatibleMatrixException(Exception):
+    '''A Matrix is incompatible with an operation.'''
     pass
 
 def is_numeric(x):
@@ -21,7 +44,8 @@ def is_numeric(x):
 
 
 class MatrixRow(object):
-    
+    '''Represents a row within a matrix.'''
+
     def __init__(*args, **kwds):
         self._columns = list(*args, **kwds)
     
@@ -30,34 +54,25 @@ class MatrixRow(object):
         "__getitem__", "__getslice__", "__gt__", "__iadd__", "__iter__", "__le__",
         "__len__", "__lt__", "__ne__", "__reversed__", "__setitem__", "__getslice__",
         "__str__", "__repr__", # TODO: Should we print out a row as a list? Let's do this for now..
-        "append", "count", "extend", "index", "insert", "pop", "remove", "reverse", "sort"
+        "append", "count", "extend", "index", "insert", "pop", "remove", "reverse",
+        "sort", "__imul__", "__mul__", "__rmul__"
     ]
     
     for _f in _delegate:
         _py = ( "def %s(self, *args, **kwds):\n" +
                 "    return self._columns.%s(*args, **kwds)\n") % (_f, _f)
         exec _py
-    
-    # ============================
-    # Custom methods
-    # ============================
-    def __imul__(self, y):
-        pass # TODO: Multiply this row. With a column? Scale it? Dunno yet
-    
-    def __mul__(self, y):
-        pass # TODO: Multiply this row with a column? scale it? decide
-    
-    def __rmul__(self, y):
-        pass # TODO: Multiply with reversed operands
 
 class Matrix(object):
+    '''Represents a matrix which is a collection of rows with a name.'''
+
     def __init__(self, matrix, name = "M"):
         self._rows = Copy(matrix)
         self.name = name
         self.Validate()
     
     def Validate(self):
-        """Validate that to matrix is well formed"""
+        '''Validate that to matrix is well formed'''
         ColCount = None
         for Row in self._rows:
             if ColCount is None:
@@ -80,24 +95,30 @@ class Matrix(object):
         exec _py
     
     def scale(self, factor):
+        '''Return a Matrix object that is a scaled copy of this matrix.'''
         return Matrix(Scale(self._rows, factor, Mutate = False))
     
     def multiply(self, matrix):
+        '''Return a Matrix object that is the result of multiplying this matrix by another.'''
         kwds = {}
         if hasattr(matrix, "name"):
             kwds["name"] = self.name + matrix.name
         return Matrix(Multiply(self._rows, matrix), **kwds)
     
     def identity(self):
+        '''Return a Matrix object that is the identity matrix for this matrix.'''
         return Matrix(Identity(self._rows))
     
     def modulo(self, factor):
+        '''Return a Matrix object that is the result of this matrix modulo a factor.'''
         return Matrix(Modulo(self._rows, factor))
     
     def add(self, factor):
+        '''Return a Matrix object that is the result of adding a factor to every term of this matrix.'''
         return Matrix(Add(self._rows, factor))
     
     def augment(self, matrix):
+        '''Return a Matrix object that is the result of augmenting this matrix with another.'''
         return Matrix(Augment(self._rows, matrix))
     
     # ============================
@@ -136,12 +157,15 @@ class Matrix(object):
             return Matrix(Multiply(y, self._rows), **kwds)
 
     def __mod__(self, factor):
+        '''Modulo this entire matrix by a factor.'''
         return self.modulo(factor)
 
     def __add__(self, matrix):
+        '''Augment this matrix with another returning a new instance.'''
         return self.augment(matrix)
        
     def __iadd__(self, matrix):
+        '''Augment this matrix with another.'''
         Augment(self._rows, matrix, Mutate = True)
         return self
     
@@ -153,8 +177,10 @@ class Matrix(object):
 
 
 class SquareMatrix(Matrix):
+    '''Represents a square matrix where the number of columns and rows are equal.'''
+
     def Validate(self):
-        """Validate matrix is square."""
+        '''Validate matrix is square.'''
         RowCount = len(self._rows)
         if RowCount == 0:
             raise EmptyMatrixException("Matrix must have at least one row and one column")
@@ -166,6 +192,7 @@ class SquareMatrix(Matrix):
                 raise NonSquareMatrixException("Matrix has %d rows and at least one row does not have an equal number of columns" % RowCount)
     
     def invert(self):
+        '''Apply Gauss-Jordon elimination to he matrix to create an instance of a matrix representing the inverse of this matrix.'''
         return Matrix(Invert(self._rows))
     
 
@@ -234,18 +261,37 @@ def ParseMatrix(s):
     return result
 
 def Augment(A, B, Mutate = False):
-    """Augment Matrix A with Matrix B."""
+    '''Augment matrix A with matrix B.
+    
+    Raises IncompatibleMatrixException if A and B have a differing number of rows.
+    
+    Returns a 2-dimensional list representing the resultant matrix.'''
+    
+    if not len(A):
+        raise EmptyMatrixException("Operand A has no rows")
+    if not len(B):
+        raise EmptyMatrixException("Operand B has no rows")
+
     if len(A) != len(B):
         raise IncompatibleMatrixException("Operand matrix does not have an equal number of rows")
     if Mutate:
         NewRows = A
     else:
         NewRows = Copy(A)
+    ColCount = len(B[0])
     for RowIndex, Row in enumerate(B):
-        NewRows[RowIndex] += Row
+        if RowIndex != 0:
+            RowColCount = len(Row)
+            if RowColCount != ColCount:
+                raise IrregularRowException("Row %d has %d columns but row 0 has %d columns" % (RowIndex, RowColCount, ColCount))
+        NewRows[RowIndex] += Row # TODO: Validate that every row in B is of
+
     return NewRows
     
 def Multiply(A, B):
+    '''Multiply matrix A by matrix B.
+    
+    Returns a 2-dimensional list representing the resultant matrix.'''
     RowCntA = len(A)
     ColCntA = len(A[0])
     RowCntB = len(B)
@@ -282,33 +328,56 @@ def ApplyFunc(Matrix, F, Mutate = False):
     return Result
 
 def Modulo(Matrix, Mod, Mutate = False):
+    '''Modulo a constant factor to all terms in a Matrix.
+
+    Returns a 2-dimensional list representing the resultant matrix.'''
     F = lambda v, x, y: v % Mod
     return ApplyFunc(Matrix, F, Mutate)
 
 def Scale(Matrix, Factor, Mutate = False):
+    '''Multiply a constant factor to all terms in a Matrix.
+    
+    Returns a 2-dimensional list representing the resultant matrix.'''
     F = lambda v, x, y: v * Factor
     return ApplyFunc(Matrix, F, Mutate)
 
 def Add(Matrix, Factor, Mutate = False):
+    '''Add a constant factor to all terms in a Matrix.
+    
+    Returns a 2-dimensional list representing the resultant matrix.'''
     F = lambda v, x, y: v + Factor
     return ApplyFunc(Matrix, F, Mutate)
 
 def Negate(Matrix, Mutate = False):
+    '''Negate all terms in a Matrix.
+
+    Returns a 2-dimensional list representing the resultant matrix.'''
     F = lambda v, x, y: -v
     return ApplyFunc(Matrix, F, Mutate)
 
 def Identity(Matrix):
+    '''Generates the identity matrix for the operand matrix.
+    
+    Raises NonSquareMatrixException if the operand matrix is invalid.
+
+    Returns a 2-dimensional list representing the resultant matrix.'''
     ValidateSquare(Matrix)
     F = lambda v, x, y: 1 if x == y else 0
     return ApplyFunc(Matrix, F, Mutate = False)
 
 def ValidateSquare(Matrix):
+    '''Validates that the operand Matrix is square.
+
+    Raises NonSquareMatrixException if the operand matrix is invalid.'''
     RowCount = len(Matrix)
     for Row in Matrix:
         if RowCount != len(Row):
             raise NonSquareMatrixException("Must be square")
 
 def Copy(Matrix):
+    '''Creates a shallow copy of the operand matrix.
+
+    Returns a 2-dimensional list representing the resultant matrix.'''
     F = lambda v, x, y: v
     return ApplyFunc(Matrix, F, Mutate = False)
 
